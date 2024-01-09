@@ -185,7 +185,7 @@ Add to the end of the *docker-compose.yml*
     image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
     command:
-      - '-nginx.scrape-uri=http://192.168.180.X:8081/metrics'
+      - '-nginx.scrape-uri=http://{Change for your ip}:8081/metrics'
     ports:
       - 9113:9113
     networks:
