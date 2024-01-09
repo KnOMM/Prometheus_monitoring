@@ -62,8 +62,6 @@ vim prometheus.yml
 ```
 Basic config for Prometheus:
 ```commandLine
-scrape_interval: 1m
-
 scrape_configs:
   - job_name: 'prometheus'
     scrape_interval: 1m
