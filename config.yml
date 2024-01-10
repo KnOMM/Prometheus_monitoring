@@ -1,0 +1,10 @@
+global:
+  resolve_timeout: 1m
+
+route:
+  receiver: 'discord-notifications'
+
+receivers:
+  - name: 'discord-notifications'
+    discord_configs:
+      - webhook_url: '{Your webhook link}'

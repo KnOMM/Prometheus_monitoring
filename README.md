@@ -1,5 +1,22 @@
 # Prometheus monitoring
 
+<details>
+
+ <summary>Table of Contents</summary>
+
+- [Preparation](#prep)
+- [Queries](#query)
+- [Grafana](#grafana)
+- [Nginx](#nginx)
+- [Alerting](#alert)
+  - [Prometheus](#prometheus_alert)
+  - [Grafana](#grafana_alert)
+- [License](#license)
+
+</details>
+
+<a name="prep"></a>
+
 ## Preparation
 ### docker-compose.yml
 It can be any name, but best practice is *docker-compose.yml* file
@@ -82,6 +99,8 @@ if you use your local machine simple curl to localhost will suffice:
 ```
 curl localhost:9100/metrics
 ```
+<a name="query"></a>
+
 ## Queries
 Memory:
 ```
@@ -104,6 +123,8 @@ Network:
 irate(node_network_transmit_bytes_total{device="eth0"}[5m])*8
 irate(node_network_receive_bytes_total{device="eth0"}[5m])*8
 ```
+<a name="grafana"></a>
+
 ## Adding Grafana
 Update docker-compose.yml
 Add to the end:
@@ -134,6 +155,8 @@ docker compose up -d
 ### Check
 Go to *localhost:3000/login* to see Grafana login page.
 Credentials: ***admin/admin***
+
+<a name="nginx"></a>
 
 ## Export NGINX metrics
 Ensure the nginx is installed
@@ -196,5 +219,120 @@ Start the stack again
 ```
 docker compose up -d
 ```
+<a name="alert"></a>
 
-## Webhooks are coming
+## Alerting
+
+<a name="prometheus_alert"></a>
+
+### Prometheus configuration
+
+Update *docker-compose.yml* file:
+```commandLine
+alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: alertmanager
+    ports:
+      - 9093:9093
+    volumes:
+      - ./config.yml:/etc/alertmanager/config.yml
+    restart: always
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - monitoring
+```
+<a name="license"></a>
+
+### Alert manager config file
+Create *config.yml*:
+```
+global:
+  resolve_timeout: 1m
+
+route:
+  receiver: 'discord-notifications'
+
+receivers:
+  - name: 'discord-notifications'
+    discord_configs:
+      - webhook_url: '{Your webhook link}'
+```
+> **_Note:_** update your webhook_url (for discord)
+
+> **_Note:_** visit [documentation](https://prometheus.io/docs/alerting/latest/configuration/#discord_config) to see options
+
+### alert.rules file for prometheus
+Create file *alert.rules*: 
+```
+groups:
+- name: AllInstances
+  rules:
+    - alert: DiskIs80PercentFull
+      expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/",fstype!="rootfs"} * 100) / node_filesystem_size_bytes{mountpoint="/",fstype!="rootfs"}) > 80
+      for: 1m
+      annotations:
+        description: 'Disk is full {{ $value }}'
+        summary: Disk is full
+    - alert: MemoryIs50PercentFull
+      expr: ((1-(node_memory_MemAvailable_bytes/node_memory_MemTotal_bytes))*100) > 50
+      for: 5m
+      annotations:
+        description: 'Memory is full {{ $value }}'
+        summary: Memory is full
+```
+The prometheus section of *docker-compose.yml* file:
+> **_Note:_** ./alert.rules:/etc/prometheus/alert.rules
+
+> **_Note:_** visit [prometheus alert documentation](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) for more info
+
+### Update prometheus.yml
+Add to the beginning:
+```
+global:
+  scrape_interval:     15s
+
+# Rules and alerts are read from the specified file(s)
+rule_files:
+  - /etc/prometheus/alert.rules
+
+# alert
+alerting:
+  alertmanagers:
+  - scheme: http
+    static_configs:
+    - targets:
+      - "alertmanager:9093"
+```
+### Restart prometheus and start up the services
+```
+docker restart prometheus
+docker compose up -d
+```
+### Test
+For testing purposes to load the machine you can use *stress-ng*
+```
+# Make some alerts
+apt install stress-ng
+stress-ng --vm-bytes $(awk '/MemAvailable/{printf "%d\n", $2 * 0.9;}' < /proc/meminfo)k --vm-keep -m 1
+```
+Wait for about a minute and enjoy your alerts
+
+<a name="grafana_alert"></a>
+### Grafana alerting
+Go to your active grafana instance i.e. http://localhost:3000
+![localhost:3000 -> Home -> Alerting](screenshots/home.png)
+
+From there the process is rather straightforward: *Alert rules -> New alert rule*
+![alert rule example](screenshots/alert.png)
+
+Then go to *Contact points -> Add contact point*
+![contact point example](screenshots/point.png)
+
+The last step is to create a notification policy. For example:
+![notification policy example](screenshots/notification.png)
+
+Enjoy your alerts
+## License
+[MIT](https://choosealicense.com/licenses/mit/)

@@ -1,0 +1,15 @@
+groups:
+- name: AllInstances
+  rules:
+    - alert: DiskIs80PercentFull
+      expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/",fstype!="rootfs"} * 100) / node_filesystem_size_bytes{mountpoint="/",fstype!="rootfs"}) > 80
+      for: 1m
+      annotations:
+        description: 'Disk is full {{ $value }}'
+        summary: Disk is full
+    - alert: MemoryIs50PercentFull
+      expr: ((1-(node_memory_MemAvailable_bytes/node_memory_MemTotal_bytes))*100) > 50
+      for: 1m
+      annotations:
+        description: 'Memory is full {{ $value }}'
+        summary: Memory is full
