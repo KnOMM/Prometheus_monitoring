@@ -334,5 +334,56 @@ The last step is to create a notification policy. For example:
 ![notification policy example](screenshots/notification.png)
 
 Enjoy your alerts
+## Application from Dockerfile
+### Create app.py with requirements for Dockerfile
+See the content in the app.py file
+Create requirements.txt file with the content:
+```
+prometheus_client
+```
+Create Dockerfile:
+```
+# Use an appropriate base image for your Python application
+FROM python:3.9
+
+# Set the working directory
+WORKDIR /app
+
+# Copy your Python application code into the container
+COPY app.py /app
+COPY requirements.txt /app
+
+# Install the necessary dependencies
+RUN pip install -r requirements.txt
+
+# Expose the port that your application listens on
+EXPOSE 8010
+
+# Run your Python application
+CMD ["python", "app.py"]
+```
+
+Update docker-compose file:
+```
+  custom-app:
+    build: .
+    container_name: my_app
+    ports:
+      - 8010:8010
+    networks:
+      - monitoring
+```
+Update prometheus config with new target:
+```
+  - job_name: 'custom-app'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['custom-app:8010']
+```
+Restart prometheus and start up the services:
+```
+docker restart prometheus
+docker compose up -d
+```
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)

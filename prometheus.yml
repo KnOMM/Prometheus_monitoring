@@ -28,3 +28,8 @@ scrape_configs:
     scrape_interval: 5s
     static_configs:
       - targets: ['nginx_exporter:9113']
+
+  - job_name: 'custom-app'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['custom-app:8010']
