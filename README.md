@@ -11,6 +11,7 @@
 - [Alerting](#alert)
   - [Prometheus](#prometheus_alert)
   - [Grafana](#grafana_alert)
+- [Custom app](#custom)
 - [License](#license)
 
 </details>
@@ -24,7 +25,7 @@ It can be any name, but best practice is *docker-compose.yml* file
 vim docker-compose.yml
 ```
 The content of the file:
-```commandLine
+```
 version: '3.8'
 
 networks:
@@ -78,7 +79,7 @@ It's our config file for prometheus that was mentioned in docker-compose.yml
 vim prometheus.yml
 ```
 Basic config for Prometheus:
-```commandLine
+```
 scrape_configs:
   - job_name: 'prometheus'
     scrape_interval: 1m
@@ -228,7 +229,7 @@ docker compose up -d
 ### Prometheus configuration
 
 Update *docker-compose.yml* file:
-```commandLine
+```
 alertmanager:
     image: prom/alertmanager:v0.25.0
     container_name: alertmanager
@@ -334,6 +335,9 @@ The last step is to create a notification policy. For example:
 ![notification policy example](screenshots/notification.png)
 
 Enjoy your alerts
+
+<a name="custom"></a>
+
 ## Application from Dockerfile
 ### Create app.py with requirements for Dockerfile
 See the content in the app.py file
